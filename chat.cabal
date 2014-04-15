@@ -1,0 +1,32 @@
+name:           chat
+version:        1.0.0
+synopsis:       Stanford CS240h Lab 2.
+build-type:     Simple
+cabal-version:  >= 1.8
+
+extra-source-files:
+  README.md
+
+library
+  exposed-modules:
+    Chat
+  build-depends:
+    base < 5
+  ghc-options: -Wall
+
+executable chat
+  main-is: Server.hs
+  build-depends:
+    base < 5
+  ghc-options: -Wall
+
+test-suite test-chat
+  type: exitcode-stdio-1.0
+  main-is: TestChat.hs
+  build-depends:
+    base < 5,
+    chat,
+    QuickCheck > 2.5,
+    hspec
+  ghc-options: -Wall
+
