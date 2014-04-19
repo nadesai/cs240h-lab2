@@ -11,13 +11,17 @@ library
   exposed-modules:
     Chat
   build-depends:
-    base < 5
+    base < 5,
+    bytestring,
+    network
   ghc-options: -Wall
 
 executable chat
   main-is: Server.hs
   build-depends:
-    base < 5
+    base < 5,
+    bytestring,
+    network
   ghc-options: -Wall
 
 test-suite test-chat
@@ -25,6 +29,8 @@ test-suite test-chat
   main-is: TestChat.hs
   build-depends:
     base < 5,
+    bytestring,
+    network,
     chat,
     QuickCheck > 2.5,
     hspec
