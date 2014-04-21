@@ -1,7 +1,7 @@
 -- | CS240h Lab 2 Chat Server
 module Chat (chat) where
 
-import Network (listenOn, accept, PortID(..), PortNumber, HostName, Socket)
+import Network (listenOn, accept, PortID(..), PortNumber, Socket)
 import System.IO (hSetBuffering, hGetLine, hPutStrLn, BufferMode(..), Handle)
 import Control.Concurrent (forkIO)
 import Control.Concurrent.Chan
@@ -38,24 +38,19 @@ printLog chan = do
 
 handleNewConnections :: Chan Message -> Socket -> UserID -> IO ()
 handleNewConnections chan sock i = do
-    -- accept client as handle
-    (client, h, n) <- accept sock
+    (client, _, _) <- accept sock
     hSetBuffering client NoBuffering
 
-    -- create new channel to communicate with client
-    newChan <- dupChan chan
-    -- send this channel to the client handler
-    _ <- forkIO $ serveChats client newChan (h,n) i
+    chan2 <- dupChan chan
+    _ <- forkIO $ serveChats client chan2 i
     handleNewConnections chan sock $! (i+1)
 
-serveChats :: Handle -> Chan Message -> (HostName, PortNumber) -> UserID -> IO ()
-serveChats client chan (h,n) i =
+serveChats :: Handle -> Chan Message -> UserID -> IO ()
+serveChats client chan i =
     do
-        -- putStrLn $ "Client on " ++ h ++ ":" ++ show n ++ " connected"
         writeChan chan (Join i)
-        -- hPutStrLn client $ show (Join i)
-        newChan <- dupChan chan
-        _ <- forkIO $ handleClientInput client chan i
+        chan2 <- dupChan chan
+        _ <- forkIO $ handleClientInput client chan2 i
         printClientLoop client chan i
 
 handleClientInput :: Handle -> Chan Message -> UserID -> IO ()
@@ -63,12 +58,12 @@ handleClientInput client chan i = do
     line <- hGetLine client
     let msg = Msg i line
     writeChan chan msg
-    -- putStrLn $ show msg
-    hPutStrLn client $ show msg
     handleClientInput client chan i
 
 printClientLoop :: Handle -> Chan Message -> UserID -> IO ()
 printClientLoop client chan i = do
     msg <- readChan chan
-    hPutStrLn client $ show msg
+    case msg of
+        (Msg j _) | j == i -> return ()
+        _ -> hPutStrLn client $ show msg
     printClientLoop client chan i
