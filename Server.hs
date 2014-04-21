@@ -2,9 +2,8 @@
 -- a library for testing.
 module Main (main) where
 
-import Chat
+import Chat (chat)
 
 -- | Run our chat server.
 main :: IO ()
 main = chat
-
