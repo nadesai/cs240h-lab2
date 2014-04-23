@@ -39,6 +39,8 @@ chat = do
 clearLog :: Chan Message -> IO ()
 clearLog chan = forever $ readChan chan
 
+-- Handle new incoming connections on the given socket and register them as a new client with the
+-- given UserID.
 handleNewConnections :: Chan Message -> Socket -> UserID -> IO ()
 handleNewConnections chan sock i = do
     (client, _, _) <- accept sock
@@ -50,6 +52,7 @@ handleNewConnections chan sock i = do
     let nextID = i+1
     handleNewConnections chan sock $! nextID
 
+-- Serve chats for each 
 serveChats :: Handle -> Chan Message -> UserID -> IO ()
 serveChats client chan i = do
         chan2 <- dupChan chan
@@ -60,11 +63,13 @@ serveChats client chan i = do
             killThread tid
             writeChan chan (Leave i)
 
+-- Handle client input and pass it on to the given channel.
 handleClientInput :: Handle -> Chan Message -> UserID -> IO ()
 handleClientInput client chan i = forever $ do
     line <- hGetLine client
     writeChan chan (Msg i line)
 
+-- Read messages from the given channel, and print them out if they are not one's own.
 printClientLoop :: Handle -> Chan Message -> UserID -> IO ()
 printClientLoop client chan i = forever $ do
     msg <- readChan chan
