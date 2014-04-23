@@ -29,28 +29,25 @@ chat :: IO ()
 chat = do
     chatPort <- getEnv portName
     let portNum = (fromIntegral :: Integer -> PortNumber) $ read chatPort
-    sock <- listenOn $ PortNumber portNum
+    socket <- listenOn $ PortNumber portNum
 
     chan <- newChan
-    _ <- forkIO $ clearLog chan
-    handleNewConnections chan sock 1
+    _ <- forkIO $ forever $ readChan chan -- If the original channel is not read from, it accumulates excess memory; this loop just clears it out
 
--- Each channel must be read in its entirety, so clearLog clears the master channel.
-clearLog :: Chan Message -> IO ()
-clearLog chan = forever $ readChan chan
+    handleNewConnections chan socket 1
 
 -- Handle new incoming connections on the given socket and register them as a new client with the
 -- given UserID.
 handleNewConnections :: Chan Message -> Socket -> UserID -> IO ()
-handleNewConnections chan sock i = do
-    (client, _, _) <- accept sock
+handleNewConnections chan socket i = do
+    (client, _, _) <- accept socket
     hSetBuffering client NoBuffering
     hSetEncoding client utf8
 
     chan2 <- dupChan chan
     _ <- forkFinally (serveChats client chan2 i) (\_ -> hClose client)
     let nextID = i+1
-    handleNewConnections chan sock $! nextID
+    handleNewConnections chan socket $! nextID
 
 -- Serve chats for each 
 serveChats :: Handle -> Chan Message -> UserID -> IO ()
